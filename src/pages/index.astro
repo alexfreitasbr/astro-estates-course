@@ -1,19 +1,43 @@
 ---
-import '../styles/global.css'
----
+import BlockRender from '../components/BlockRender.astro'
+import CommunHead from '../components/CommunHead.astro'
 
+import '../styles/global.css'
+import type { Block } from '@wp-block-tools/styles'
+
+const response = await fetch( `${import.meta.env.WPGRAPHQL_URL}`, {
+	method: 'POST',
+	headers: {
+		'content-type': 'application/json',
+	},
+	body: JSON.stringify({
+		query:`
+			query PageQuery {
+  				nodeByUri(uri: "/") {
+					... on Page {
+						id
+						blocks
+						seo {
+							metaDesc
+							title
+						}
+					}
+  				}
+			}
+		`
+	})
+})
+
+const {data} = await response.json()
+const blocks: Block[] = data.nodeByUri?.blocks || []
+const {metaDesc ="",title=""} = data.nodeByUri?.seo || {}
+
+---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
-	</head>
+	<CommunHead title={title} description={metaDesc}/>
 	<body>
-		<h1 class="bg-amber-500" >Ola</h1>
+		<BlockRender blocks={blocks}/>
 	</body>
 </html>
